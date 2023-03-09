@@ -5,6 +5,10 @@ import com.opencsv.CSVReader;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -12,10 +16,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,47 @@ public class Main {
 
         String jsonFileName2 = "data2.json";
         writeString(jsonFileName2, json2);
+
+        // 3 - json parsing
+        String json3 = readString("data.json");
+
+        List<Employee> list3 = jsonToList(json3);
+        for (int i = 0; i < list3.size(); i++) {
+            System.out.println(list3.get(i).toString());
+        }
     }
+
+    private static List<Employee> jsonToList(String jsonString) {
+        List<Employee> employeeList = new ArrayList<>();
+        JSONParser parser = new JSONParser();
+        try {
+            JSONArray jsonArray = (JSONArray) parser.parse(jsonString);
+            for (Object jsonElement : jsonArray) {
+                GsonBuilder builder = new GsonBuilder();
+                Gson gson = builder.create();
+                Employee employee = gson.fromJson(jsonElement.toString(), Employee.class);
+                employeeList.add(employee);
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return employeeList;
+    }
+
+    private static String readString(String file) {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            StringBuilder sItog = new StringBuilder();
+            String s;
+            while ((s = br.readLine()) != null) {
+                sItog.append(s);
+            }
+            return sItog.toString();
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return null;
+    }
+
     private static List<Employee> parseXML(String file) throws ParserConfigurationException, IOException, SAXException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -48,7 +89,7 @@ public class Main {
 
         List<Employee> employeeList = new ArrayList<>();
         NodeList nodeList = root.getChildNodes();
-        for (int i =0; i < nodeList.getLength(); i++){
+        for (int i = 0; i < nodeList.getLength(); i++) {
             Node node_ = nodeList.item(i);
             if (Node.ELEMENT_NODE == node_.getNodeType()) {
                 Element element = (Element) node_;
@@ -57,14 +98,14 @@ public class Main {
                 String lastName = element.getElementsByTagName("lastName").item(0).getTextContent();
                 String country = element.getElementsByTagName("country").item(0).getTextContent();
                 int age = Integer.parseInt(element.getElementsByTagName("age").item(0).getTextContent());
-                Employee employee = new Employee(id,firstName,lastName,country,age);
+                Employee employee = new Employee(id, firstName, lastName, country, age);
                 employeeList.add(employee);
             }
         }
         return employeeList;
     }
 
-    private static void writeString(String file,String str) {
+    private static void writeString(String file, String str) {
         try (FileWriter writer = new FileWriter(file)) {
             writer.write(String.valueOf(str));
             writer.flush();
@@ -97,6 +138,6 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    return null;
+        return null;
     }
 }
